@@ -1,0 +1,44 @@
+<script src="../simpletest.js"></script>
+<script>
+    function lastIndexOf(array, valueToFind, startingIndex) {
+
+        if (!startingIndex || startingIndex >= 0) {
+            var actualStartingIndex = startingIndex;
+
+            if (actualStartingIndex > array.length - 1 || actualStartingIndex === undefined) {
+                actualStartingIndex = array.length - 1;
+            }
+
+            for (var i = actualStartingIndex; i >= 0; i--) {
+                if (i in array) {
+                    if (array[i] === valueToFind) {
+                        return i;
+                    }
+                }
+            }
+        }
+        return -1;
+    }
+    tests({
+        '(1) If the value to find is in the array, the corresponding index of its last instance is returned': function () {
+            var returnedValue = lastIndexOf([1, 2, , 3, 1], 1);
+            eq(returnedValue, 4);
+        },
+        '(2) If a starting index is included, the function begins searching from that index to the beginning of the array': function () {
+            var returnedValue = lastIndexOf([1, 2, , 3, 4, 1, 0, , 1], 1, 1);
+            eq(returnedValue, 0);
+        },
+        '(3) If the value to find is not found, function returns -1': function () {
+            var returnedValue = lastIndexOf([1, 2, 3], 4);
+            eq(returnedValue, -1);
+        },
+        '(4) If a starting index is included and is >= array length, the entire array will be searched': function () {
+            var returnedValue = lastIndexOf([1, 2, 3], 3, 4);
+            eq(returnedValue, 2);
+        },
+        '(5) If an included starting index is a negative number, the array is not searched and -1 is returned': function () {
+            var returnedValue = lastIndexOf([1, 2, 3, 3], 3, -1);
+            eq(returnedValue, -1);
+        }
+    });
+</script>

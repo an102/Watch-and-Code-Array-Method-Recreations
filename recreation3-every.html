@@ -1,0 +1,238 @@
+<script src="../simpletest.js"></script>
+<script>
+    function every(array, callback, configThisObject) {
+
+        var everyCallback = callback;
+
+        if (configThisObject) {
+            everyCallback = callback.bind(configThisObject);
+        }
+
+        for (i in array) {
+            if (!everyCallback(array[i], parseInt(i), array)) {
+                return false;
+            }
+        }
+        return true;
+    }
+    tests({
+        '(1) Callback should run once and return false if nothing specified to return': function () {
+            var numOfTimesCallbackRuns = 0;
+            var returnedValue = every([1, 2, 3], function () {
+                numOfTimesCallbackRuns++;
+            });
+            eq(returnedValue, false);
+            eq(numOfTimesCallbackRuns, 1);
+        },
+        '(2) Callback should not run and function should return true if array is empty': function () {
+            var numOfTimesCallbackRuns = 0;
+            var returnedValue = every([], function (element) {
+                numOfTimesCallbackRuns++;
+                return element < 1;
+            });
+            eq(returnedValue, true)
+            eq(numOfTimesCallbackRuns, 0);
+        },
+        '(3) Function should run once for each extant value and return true if all elements satisfy the callback test function': function () {
+            var numOfTimesCallbackRuns = 0;
+            var returnedValue = every([1, 2, 3, 4], function (element) {
+                numOfTimesCallbackRuns++;
+                return element > 0;
+            });
+            eq(returnedValue, true);
+            eq(numOfTimesCallbackRuns, 4)
+        },
+        '(4) Function should return false if at least one element does not satisfy the test function': function () {
+            var returnedValue = every([1, 2, 3, 4], function (element) {
+                return element < 3;
+            });
+            eq(returnedValue, false);
+        },
+        '(5) Callback should take index as an argument': function () {
+            var returnedValue = every([1, 2, 3, 4], function (element, index) {
+                return index < 4;
+            });
+            eq(returnedValue, true);
+        },
+        '(6) Callback should take array as an argument': function () {
+            var returnedValue = every([1, 2, 3, 4], function (element, index, array) {
+                return element > 0 && array.length > 3;
+            });
+            eq(returnedValue, true);
+        },
+        '(7) Function should accept a configurable `this` object': function () {
+            var configThisObject = { key: "value" };
+            var returnedValue = every([1, 2, 3, 4], function (element) {
+                eq(this, configThisObject);
+                eq(this.key, "value");
+            }, configThisObject);
+        },
+        '(8) Callback should not run on empty indexes, but all extant values retain original indexes': function () {
+            var numOfTimesCallbackRuns = 0;
+            var collectedIndexes = [];
+            var assumedCollectedIndexes = [1, 2, 4, 6];
+            var indexCollectionsAreEqual = true;
+
+            var returnedValue = every([, 1, 2, , 3, , 4], function (element, index) {
+                numOfTimesCallbackRuns++;
+                collectedIndexes.push(index);
+                return element < 5;
+            });
+
+            for (var i = 0; i < collectedIndexes.length; i++) {
+                if (collectedIndexes[i] !== assumedCollectedIndexes[i]) {
+                    indexCollectionsAreEqual = false;
+                }
+            }
+
+            eq(indexCollectionsAreEqual, true);
+            eq(returnedValue, true);
+            eq(numOfTimesCallbackRuns, 4);
+        },
+        '(9) When an el is added to any pos in an arr during a callback, its val is not returnable during that callback': function () {
+            var passedArray = [1, 2, 3];
+            var firstElementAtEndOfFirstRun = '';
+            var returnedValue = every(passedArray, function (element, index, array) {
+                array.unshift(100);
+                firstElementAtEndOfFirstRun = array[0];
+                return element < 4;
+            });
+            eq(returnedValue, true);
+            eq(firstElementAtEndOfFirstRun, 100);
+        },
+        '(10) When an el not beyond orig length of arr without empty indexes is added to a later pos in arr during a callback, it is returnable in subsequent callbacks': function () {
+            var passedArray = [1, 2, 3];
+            var visitedElementInSecondRun = '';
+            returnedValue = every(passedArray, function (element, index, array) {
+                if (index === 0) {
+                    array.splice(1, 0, 100);
+                }
+                if (index === 1) {
+                    visitedElementInSecondRun = element;
+                }
+                return element < 4;
+            });
+            eq(returnedValue, false);
+            eq(visitedElementInSecondRun, 100);
+        },
+        '(11) When an el beyond orig length of arr without empty indexes is added to a pos in an arr during a callback, its not returnable in the function': function () {
+            var passedArray = [1, 2, 3];
+            var fourthElementAtEndOfThirdRun = '';
+            returnedValue = every(passedArray, function (element, index, array) {
+                if (index === 0) {
+                    array.push(100);
+                }
+                if (index === 2) {
+                    fourthElementAtEndOfThirdRun = array[3];
+                }
+                return element < 4;
+            });
+            eq(returnedValue, true);
+            eq(fourthElementAtEndOfThirdRun, 100);
+        },
+        '(12) When an el in an array is changed during a callback, its original val remains returnable in that callback': function () {
+            var passedArray = [1, 2, 3];
+            var firstElementAtEndOfFirstRun = '';
+            var returnedValue = every(passedArray, function (element, index, array) {
+                if (index === 0) {
+                    array[0] = 100;
+                }
+
+                firstElementAtEndOfFirstRun = array[0];
+                return element < 4;
+            });
+            eq(returnedValue, true);
+            eq(firstElementAtEndOfFirstRun, 100);
+        },
+        '(13) When a later el not beyond orig length of arr without empty indexes is changed during a callback, its new val is returnable in subsequent callbacks': function () {
+            var passedArray = [1, 2, 3];
+            var secondElementAtEndOfSecondRun = '';
+            returnedValue = every(passedArray, function (element, index, array) {
+                if (index === 0) {
+                    array[1] = 100;
+                }
+                if (index === 1) {
+                    secondElementAtEndOfSecondRun = array[1];
+                }
+                return element < 4;
+            });
+            eq(returnedValue, false);
+            eq(secondElementAtEndOfSecondRun, 100);
+        },
+        '(14) When an el in an array is deleted during a callback, it remains returnable in that callback': function () {
+            var passedArray = [1, 2, 3];
+            var firstElementAtEndOfFirstRun = '';
+            var returnedValue = every(passedArray, function (element, index, array) {
+                array.shift();
+                firstElementAtEndOfFirstRun = array[0];
+                return element > 1;
+            });
+            eq(returnedValue, false);
+            eq(firstElementAtEndOfFirstRun, 2);
+        },
+        '(15) When any el not beyond orig length of arr without empty indexes is deleted during a callback, its orig value is not returnable after that callback ends': function () {
+            var passedArray = [1, 2, 3, 4];
+            var secondlementAtEndOfSecondRun = '';
+            returnedValue = every(passedArray, function (element, index, array) {
+                if (index === 0) {
+                    array.splice(1, 1);
+                }
+                if (index === 1) {
+                    secondElementAtEndOfSecondRun = array[1];
+                }
+                return element !== 2;
+            });
+            eq(returnedValue, true);
+            eq(secondElementAtEndOfSecondRun, 3);
+        },
+        '(16) When an el not beyond orig length of arr without empty indexes is deleted during a callback, the callback runs one time less than orig length of arr without empty indexes': function () {
+            var numOfTimesCallbackRuns = 0;
+            var passedArray = [1, 2, 3];
+            var returnedValue = every(passedArray, function (element, index, array) {
+                numOfTimesCallbackRuns++;
+                if (index === 0) {
+                    array.pop();
+                }
+                return element < 3;
+            });
+            eq(returnedValue, true);
+            eq(numOfTimesCallbackRuns, 2);
+        },
+        '(17) When an el in an array is deleted during a callback, and another is added while function runs, the callback runs orig length of arr without empty indexes': function () {
+            var numOfTimesCallbackRuns = 0;
+            var passedArray = [1, 2, 3];
+            var returnedValue = every(passedArray, function (element, index, array) {
+                numOfTimesCallbackRuns++;
+                if (index === 0) {
+                    array.pop();
+                }
+                if (index === 1) {
+                    array.push(100);
+                }
+                return element < 3;
+            });
+            eq(returnedValue, false);
+            eq(numOfTimesCallbackRuns, 3);
+        },
+        '(18) When the test function returns something other than a boolean, i, or a false value, function returns true after running for length of arr without empty indexes': function () {
+            var numOfTimesCallbackRuns = 0;
+            var passedArray = [1, 2, 3];
+            var returnedValue = every(passedArray, function (element, index, array) {
+                numOfTimesCallbackRuns++;
+                return "not a boolean, i, or a false value";
+            });
+            eq(numOfTimesCallbackRuns, 3);
+            eq(returnedValue, true);
+        },
+        '(19) When the test function returns i, function returns false after two runs': function () {
+            var numOfTimesCallbackRuns = 0;
+            var passedArray = [1, 2, 3];
+            var returnedValue = every(passedArray, function (element, index, array) {
+                numOfTimesCallbackRuns++;
+                return index;
+            });
+            eq(numOfTimesCallbackRuns, 1);
+            eq(returnedValue, false);
+        }
+    });
+</script>

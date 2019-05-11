@@ -1,0 +1,160 @@
+<script src="../simpletest.js"></script>
+<script>
+    function fill(array, value, startingIndex, endingIndex) {
+        if (!array || typeof array === "string") {
+            throw new Error('fill(' + array + ') is not a function');
+        }
+
+        var actualStartingIndex = 0;
+        var actualEndingIndex = array.length;
+
+        if (startingIndex >= 0) {
+            actualStartingIndex = startingIndex;
+        } else if (startingIndex < 0) {
+            actualStartingIndex = array.length + startingIndex;
+        }
+
+        if (actualStartingIndex < 0) {
+            actualStartingIndex = 0;
+        } else if (actualStartingIndex > array.length) {
+            actualStartingIndex = array.length;
+        }
+
+        if (endingIndex >= 0) {
+            actualEndingIndex = endingIndex;
+        } else if (endingIndex < 0) {
+            actualEndingIndex = array.length + endingIndex;
+        }
+
+        if (actualEndingIndex < 0) {
+            actualEndingIndex = 0;
+        } else if (actualEndingIndex > array.length) {
+            actualEndingIndex = array.length;
+        }
+
+        for (var i = actualStartingIndex; i < actualEndingIndex; i++) {
+            array[i] = value;
+        }
+
+        return array;
+    }
+    tests({
+        '(1) If the passed array is empty, the empty array is returned unmodified': function () {
+            var returnedArray = fill([]);
+            var testThatArrayIsReturned = Array.isArray(returnedArray);
+            eq(testThatArrayIsReturned, true);
+        },
+        '(2) If the array is not empty, the function modifies and returns the array; if no value is provided, all values in the array are undefined after function is run': function () {
+            var returnedArray = fill([1, 2, 3]);
+            var assumedReturnedArray = [undefined, undefined, undefined];
+
+            for (i in returnedArray) {
+                eq(returnedArray[i], assumedReturnedArray[i]);
+            }
+        },
+        '(3) If nothing is passed into the function, an error is thrown': function () {
+            try {
+                fill();
+            } catch (e) {
+                eq(e instanceof Error, true);
+            }
+        },
+        '(4) If the first arg is a string, an error is thrown': function () {
+            try {
+                fill("not an array");
+            } catch (e) {
+                eq(e instanceof Error, true);
+            }
+        },
+        '(5) The provided value replaces all elements in the modified returned arr within the span of starting and ending indexes; if these indexes are not provided, they respectively default to 0 and array.length': function () {
+            var returnedArray = fill([1, 2, 3, 4, 5], 100);
+            var assumedReturnedArray = [100, 100, 100, 100, 100];
+            eq(returnedArray.length, assumedReturnedArray.length);
+
+            for (var i = 0; i < returnedArray.length; i++) {
+                eq(returnedArray[i], assumedReturnedArray[i]);
+            }
+        },
+        '(6) If positive starting index provided, the provided value replaces all elements starting from the corresponding index': function () {
+            var returnedArray = fill([1, 2, 3, 4, , 5, 6], 100, 3);
+            var assumedReturnedArray = [1, 2, 3, 100, 100, 100, 100];
+
+            for (var i = 0; i < returnedArray.length; i++) {
+                eq(returnedArray[i], assumedReturnedArray[i]);
+            }
+        },
+        '(7) If positive starting index exceeds array length - 1, the array is returned unmodified': function () {
+            var returnedArray = fill([1, 2, 3, 4, 5, 6], 100, 6);
+            var assumedReturnedArray = [1, 2, 3, 4, 5, 6];
+
+            for (var i in returnedArray) {
+                eq(returnedArray[i], assumedReturnedArray[i]);
+            }
+        },
+        '(8) If positive ending index provided, last modified el is the el before the corresponding index in array; ending index is a cutoff point and not modified': function () {
+            var returnedArray = fill([1, 2, 3, 4, , 5, 6], 100, 1, 5);
+            var assumedReturnedArray = [1, 100, 100, 100, 100, 5, 6];
+
+            for (var i = 0; i < returnedArray.length; i++) {
+                eq(returnedArray[i], assumedReturnedArray[i]);
+            }
+        },
+        '(9) If positive ending index exceeds orig array length - 1, ending index equals array length': function () {
+            var returnedArray = fill([1, 2, 3, 4, 5, 6], 100, 5, 10);
+            var assumedReturnedArray = [1, 2, 3, 4, 5, 100];
+
+            for (i in returnedArray) {
+                eq(returnedArray[i], assumedReturnedArray[i]);
+            }
+        },
+        '(10) If negative starting index provided, modification starts from the index corresponding to orig array length + starting index': function () {
+            var returnedArray = fill([1, 2, 3, 4, 5], 100, -4);
+            var assumedReturnedArray = [1, 100, 100, 100, 100];
+            eq(returnedArray.length, assumedReturnedArray.length);
+
+            for (var i = 0; i < returnedArray.length; i++) {
+                eq(returnedArray[i], assumedReturnedArray[i]);
+            }
+        },
+        '(11) If orig array length + negative starting index <= 0, starting index equals 0': function () {
+            var returnedArray = fill([1, 2, 3, 4, 5], 100, -10, 6);
+            var assumedReturnedArray = [100, 100, 100, 100, 100];
+            eq(returnedArray.length, assumedReturnedArray.length);
+
+            for (var i = 0; i < returnedArray.length; i++) {
+                eq(returnedArray[i], assumedReturnedArray[i]);
+            }
+        },
+        '(12) If negative ending index provided, last modified el is the el before the index corresponding to array length + ending index': function () {
+            var returnedArray = fill([1, 2, 3, 4, 5], 100, -10, -1);
+            var assumedReturnedArray = [100, 100, 100, 100, 5];
+            eq(returnedArray.length, assumedReturnedArray.length);
+
+            for (var i = 0; i < returnedArray.length; i++) {
+                eq(returnedArray[i], assumedReturnedArray[i]);
+            }
+        },
+        '(13) If orig array length + negative ending index <= 0, no element is modified': function () {
+            var returnedArray = fill([1, 2, 3, 4, 5], 100, 0, -10);
+            var assumedReturnedArray = [1, 2, 3, 4, 5];
+
+            for (i in returnedArray) {
+                eq(returnedArray[i], assumedReturnedArray[i]);
+            }
+        },
+        '(14) If the actual starting index equals or exceeds the actual ending index, no elements are modified': function () {
+            var returnedArray = fill([1, 2, 3, 4, 5], 100, -4, 1);
+            var assumedReturnedArray = [1, 2, 3, 4, 5];
+
+            for (i in returnedArray) {
+                eq(returnedArray[i], assumedReturnedArray[i]);
+            }
+
+            var returnedArray2 = fill([1, 2, 3, 4, 5], 100, 1, 1);
+
+            for (i in returnedArray2) {
+                eq(returnedArray2[i], assumedReturnedArray[i]);
+            }
+        }
+    });
+</script>

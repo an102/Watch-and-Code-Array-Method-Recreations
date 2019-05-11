@@ -1,0 +1,58 @@
+<script src="../simpletest.js"></script>
+<script>
+    function unshift(array) {
+        if (!array || typeof array === "string") {
+            throw new Error('unshift(' + array + ') is not a function');
+        }
+
+        array.reverse();
+
+
+        for (var i = arguments.length - 1; i > 0; i--) {
+            array[array.length] = arguments[i];
+        }
+
+        array.reverse();
+
+        return array.length;
+    }
+    tests({
+        '(1) Function should return array length': function () {
+            var lengthIsZero = unshift([]);
+            eq(lengthIsZero, 0);
+            var lengthIsFive = unshift([1, 2, 3, 4, 5]);
+            eq(lengthIsFive, 5);
+        },
+        '(2) Function should prepend any number of elements to the beginning of the array; new elements should appear in the same order originally provided': function () {
+            var passedArray = [7, 8, 9];
+            unshift(passedArray, 1, 2, 3, 4, 5, "six");
+            var assumedUpdatedArray = [1, 2, 3, 4, 5, "six", 7, 8, 9];
+            for (i in passedArray) {
+                eq(passedArray[i], assumedUpdatedArray[i]);
+            }
+        },
+        '(3) If no arguments beyond the array itself are provided, the array is unchanged': function () {
+            var passedArray = [1, 2, 3];
+            unshift(passedArray);
+            var assumedNonupdatedArray = [1, 2, 3];
+
+            for (i in passedArray) {
+                eq(passedArray[i], assumedNonupdatedArray[i]);
+            }
+        },
+        '(4) If nothing is passed into the function, an error is thrown': function () {
+            try {
+                unshift();
+            } catch (e) {
+                eq(e instanceof Error, true);
+            }
+        },
+        '(5) If the first arg is a string, an error is thrown': function () {
+            try {
+                unshift("not an array");
+            } catch (e) {
+                eq(e instanceof Error, true);
+            }
+        }
+    });
+</script>

@@ -1,0 +1,52 @@
+<script src="../simpletest.js"></script>
+<script>
+    function concat(array) {
+
+        var newArray = array;
+
+        for (var i = 1; i < arguments.length; i++) {
+            if (Array.isArray(arguments[i])) {
+                for (var j = 0; j < arguments[i].length; j++) {
+                    newArray.push(arguments[i][j]);
+                }
+            } else {
+                newArray.push(arguments[i]);
+            }
+
+        }
+        return newArray;
+    }
+    tests({
+        '(1) If only an array is passed into the function call, a copy of that array is returned': function () {
+            passedArray = [1, 2, 3];
+            newArray = concat(passedArray);
+
+            for (var i = 0; i < newArray; i++) {
+                eq(passedArray[i], newArray[i]);
+            }
+            !eq(newArray, passedArray);
+        },
+        '(2) If more than one array is passed, a new array is returned consisting of a merge of all passed arrays': function () {
+            passedArray = [1, 2, 3];
+            otherArray1 = [4, 5, 6];
+            otherArray2 = [7, 8, 9];
+            assumedResult = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+            newArray = concat(passedArray, otherArray1, otherArray2);
+
+            for (var i = 0; i < newArray.length; i++) {
+                eq(newArray[i], assumedResult[i]);
+            }
+        },
+        '(3) If a non-array valueN is passed, it is included in the new array': function () {
+            passedArray = [1, 2, 3];
+            otherArray1 = [4, 5, 6];
+            otherArray2 = [7, 8, 9];
+            assumedResult = [1, 2, 3, 4, 5, 6, 7, 8, 9, "valueN", 100];
+            newArray = concat(passedArray, otherArray1, otherArray2, "valueN", 100);
+
+            for (var i = 0; i < newArray.length; i++) {
+                eq(newArray[i], assumedResult[i]);
+            }
+        }
+    });
+</script>

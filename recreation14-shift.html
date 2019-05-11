@@ -1,0 +1,65 @@
+<script src="../simpletest.js"></script>
+<script>
+    function shift(array) {
+        if (!array || typeof array === "string") {
+            throw new Error('shift(' + array + ') is not a function');
+        }
+
+        var elToReturn = array[0];
+        array.reverse();
+        array.length > 0 ? array.length = array.length - 1 : array.length = 0;
+        array.reverse();
+        return elToReturn;
+    }
+    tests({
+        '(1) Function should remove the first element from the passed array and return the removed element': function () {
+            var passedArray = [1, 2, 3];
+            var removedEl = shift(passedArray);
+            var assumedUpdateOfPassedArray = [2, 3];
+            eq(removedEl, 1);
+            for (var i = 0; i < assumedUpdateOfPassedArray.length; i++) {
+                eq(passedArray[i], assumedUpdateOfPassedArray[i]);
+            }
+        },
+        '(2) If the first el in the arr is an empty index, the removed and returned el is undefined; all subsequent empty indexes remain': function () {
+            var passedArray = [, , 1, , 2, , 3, ,];
+            var removedEl = shift(passedArray);
+            var assumedUpdateOfPassedArray = [, 1, , 2, , 3,];
+            eq(removedEl, undefined);
+            for (var i = 0; i < assumedUpdateOfPassedArray.length; i++) {
+                eq(passedArray[i], assumedUpdateOfPassedArray[i]);
+            }
+            // the below checks that empty indexes have not been assigned as undefined
+            var numOfNonEmptyIndexesInPassedArr = 0;
+            var numOfNonEmptyIndexesInAssumedArr = 0;
+
+            for (i in passedArray) {
+                numOfNonEmptyIndexesInPassedArr++;
+            }
+            for (i in assumedUpdateOfPassedArray) {
+                numOfNonEmptyIndexesInAssumedArr++;
+            }
+            eq(numOfNonEmptyIndexesInPassedArr, numOfNonEmptyIndexesInAssumedArr);
+        },
+        '(3) If the array has no elements, the function returns undefined': function () {
+            var passedArray = [];
+            var removedEl = shift(passedArray);
+            eq(removedEl, undefined);
+            eq(passedArray.length, 0);
+        },
+        '(4) If nothing is passed into the function, an error is thrown': function () {
+            try {
+                shift();
+            } catch (e) {
+                eq(e instanceof Error, true);
+            }
+        },
+        '(5) If the first arg is a string, an error is thrown': function () {
+            try {
+                shift("not an array");
+            } catch (e) {
+                eq(e instanceof Error, true);
+            }
+        }
+    });
+</script>

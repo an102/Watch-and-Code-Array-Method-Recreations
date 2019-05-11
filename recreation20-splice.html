@@ -1,0 +1,186 @@
+<script src="../simpletest.js"></script>
+<script>
+    function splice(array, startingIndex, deleteCount) {
+        if (!array || typeof array === "string") {
+            throw new Error('splice(' + array + ') is not a function');
+        }
+
+        if (startingIndex !== undefined) {
+
+            // determine actual starting index, accounting for negative indexes
+            var actualStartingIndex = 0;
+
+            if (startingIndex >= 0) {
+                actualStartingIndex = startingIndex;
+            } else if (startingIndex < 0) {
+                actualStartingIndex = array.length + startingIndex;
+            }
+
+            if (actualStartingIndex < 0) {
+                actualStartingIndex = 0;
+            } else if (actualStartingIndex > array.length) {
+                actualStartingIndex = array.length;
+            }
+
+            // delete by deleteCount
+            if (deleteCount > 0 || deleteCount === undefined) {
+
+                var actualDeleteCount = array.length - actualStartingIndex;
+
+                if (deleteCount !== undefined) {
+                    actualDeleteCount = deleteCount;
+                }
+
+                var iterationCutoffPt = actualDeleteCount;
+
+                if (array.length < actualDeleteCount) {
+                    iterationCutoffPt = array.length;
+                }
+
+                // iterate through num of elements to delete
+                for (var i = 0; i < iterationCutoffPt; i++) {
+
+                    // shift each element in array after startingIndex to the left for every element deleted
+                    for (var j = actualStartingIndex; j < array.length; j++) {
+
+                        // check for and preserve empty indexes while shifting
+                        if (!(j + 1 in array)) {
+                            delete array[j];
+                        } else {
+                            array[j] = array[j + 1];
+                        }
+                    }
+                    array.length = array.length - 1;
+                }
+            }
+
+            // add new items
+            if (3 in arguments) {
+
+                // iterate through num of elements to add
+                for (var i = 0; i < arguments.length - 3; i++) {
+
+                    var arrayLengthPriorToShift = array.length;
+                    var newValOfElAtJPlus1 = array[actualStartingIndex];
+
+                    // starting from starting index, shift each element to the right once for every element to be added
+                    for (var j = actualStartingIndex; j < arrayLengthPriorToShift; j++) {
+                        if (!(j in array)) {
+                            delete array[j + 1];
+                        } else {
+                            priorValOfElAtJPlus1 = array[j + 1];
+                            array[j + 1] = newValOfElAtJPlus1;
+                            newValOfElAtJPlus1 = priorValOfElAtJPlus1;
+                        }
+                    }
+                }
+
+                // actually add the new items
+                for (var i = 0; i < arguments.length - 3; i++) {
+                    array[i + actualStartingIndex] = arguments[i + 3];
+                }
+            }
+        }
+        return array;
+    }
+    tests({
+        '(1) If the passed array is empty, the empty array is returned unmodified': function () {
+            var returnedArray = splice([]);
+            var testThatArrayIsReturned = Array.isArray(returnedArray);
+            eq(testThatArrayIsReturned, true);
+        },
+        '(2) If the array is not empty but no starting index is provided, the function returns the array unmodified': function () {
+            var returnedArray = splice([1, 2, 3]);
+            var assumedReturnedArray = [1, 2, 3];
+
+            for (i in returnedArray) {
+                eq(returnedArray[i], assumedReturnedArray[i]);
+            }
+        },
+        '(3) If nothing is passed into the function, an error is thrown': function () {
+            try {
+                splice();
+            } catch (e) {
+                eq(e instanceof Error, true);
+            }
+        },
+        '(4) If the first arg is a string, an error is thrown': function () {
+            try {
+                splice("not an array");
+            } catch (e) {
+                eq(e instanceof Error, true);
+            }
+        },
+        '(5) If no delete count provided, function deletes all array contents starting from starting index; modified array is returned': function () {
+            var returnedArray = splice([1, 2, 3, 4, 5], 1);
+            var assumedReturnedArray = [1];
+            eq(returnedArray.length, assumedReturnedArray.length);
+
+            for (i in returnedArray) {
+                eq(returnedArray[i], assumedReturnedArray[i]);
+            }
+        },
+        '(6) If delete count provided, function deletes a num of elements as dictated by delete count starting from starting index; modified array is returned': function () {
+            var returnedArray = splice([1, 2, 3, 4, 5], 2, 2);
+            var assumedReturnedArray = [1, 2, 5]; eq(returnedArray.length, assumedReturnedArray.length);
+
+            for (i in returnedArray) {
+                eq(returnedArray[i], assumedReturnedArray[i]);
+            }
+        },
+        '(7) If delete count is 0 and arguments include extra items, the items are added starting from starting index while shifting existing elements; modified array is returned': function () {
+            var returnedArray = splice([1, 2, 3, 4, 5], 2, 0, "newly", "added", "elements");
+            var assumedReturnedArray = [1, 2, "newly", "added", "elements", 3, 4, 5];
+            eq(returnedArray.length, assumedReturnedArray.length);
+
+            for (i in returnedArray) {
+                eq(returnedArray[i], assumedReturnedArray[i]);
+            }
+        },
+        '(8) Function should preserve all empty indexes': function () {
+            var returnedArray = splice([, 1, , , 2, 3, 4, 5, 6, 7], 5, 3, "newly", "added", "elements");
+            var assumedReturnedArray = [, 1, , , 2, "newly", "added", "elements", 6, 7];
+
+            for (var i = 0; i < returnedArray.length; i++) {
+                eq(returnedArray[i], assumedReturnedArray[i]);
+            }
+            // the below checks that empty indexes have not been assigned as undefined
+            var numOfNonEmptyIndexesInReturnedArr = 0;
+            var numOfNonEmptyIndexesInAssumedArr = 0;
+
+            for (i in returnedArray) {
+                numOfNonEmptyIndexesInReturnedArr++;
+            }
+            for (i in assumedReturnedArray) {
+                numOfNonEmptyIndexesInAssumedArr++;
+            }
+            eq(numOfNonEmptyIndexesInReturnedArr, numOfNonEmptyIndexesInAssumedArr);
+        },
+        '(9) If positive starting index exceeds array length - 1, no elements can be deleted and new items are added to the end of the array': function () {
+            var returnedArray = splice([1, 2, 3, 4, 5, 6], 6, 3, "newly", "added", "elements");
+            var assumedReturnedArray = [1, 2, 3, 4, 5, 6, "newly", "added", "elements"];
+
+            for (var i in returnedArray) {
+                eq(returnedArray[i], assumedReturnedArray[i]);
+            }
+        },
+        '(10) If negative starting index provided, starting index equals the index corresponding to orig array length + starting index': function () {
+            var returnedArray = splice([1, 2, 3, 4, 5], -4, 1, "addition");
+            var assumedReturnedArray = [1, "addition", 3, 4, 5];
+            eq(returnedArray.length, assumedReturnedArray.length);
+
+            for (var i in returnedArray) {
+                eq(returnedArray[i], assumedReturnedArray[i]);
+            }
+        },
+        '(11) If orig array length + negative starting index <= 0, starting index equals 0': function () {
+            var returnedArray = splice([1, 2, 3, 4, 5], -10, 2, "addition");
+            var assumedReturnedArray = ["addition", 3, 4, 5];
+            eq(returnedArray.length, assumedReturnedArray.length);
+
+            for (var i in returnedArray) {
+                eq(returnedArray[i], assumedReturnedArray[i]);
+            }
+        }
+    });
+</script>

@@ -1,0 +1,85 @@
+<script src="../simpletest.js"></script>
+<script>
+    function join(array, separator) {
+        if (!array || typeof array === "string") {
+            throw new Error('join(' + array + ') is not a function');
+        }
+
+        var finalString = '';
+
+        for (var i = 0; i < array.length; i++) {
+            if (typeof array[i] === "undefined" || array[i] === null) {
+                array[i] = '';
+            }
+
+
+            if (typeof separator === "string" && separator.length === 0) {
+                finalString += array[i];
+            } else if (separator) {
+                finalString += array[i];
+                if (i < array.length - 1) {
+                    finalString += separator;
+                }
+            } else {
+                finalString += array[i];
+                if (i < array.length - 1) {
+                    finalString += ',';
+                }
+            }
+
+        }
+        return finalString;
+    }
+    tests({
+        '(1) Function should take an array as an argument and return a string, even if array is empty': function () {
+            var returnValue = join([]);
+            eq(typeof returnValue, "string");
+        },
+        '(2) If nothing is passed into the function, an error is thrown': function () {
+            try {
+                slice();
+            } catch (e) {
+                eq(e instanceof Error, true);
+            }
+        },
+        '(3) If the first arg is a string, an error is thrown': function () {
+            try {
+                join("not an array");
+            } catch (e) {
+                eq(e instanceof Error, true);
+            }
+        },
+        '(4) If no separator provided, function should return a string comprised of joined elements of the array, separated by a comma': function () {
+            var returnValue = join(["this", 1, "thing", "is", "joined"]);
+            eq(returnValue, "this,1,thing,is,joined");
+        },
+        '(5) If an element is the array is an empty string, it is detectable in the returned string only by the presence of an additional seperator': function () {
+            var returnValue = join(["this", "thing", "is", "", "joined"]);
+            eq(returnValue, "this,thing,is,,joined");
+        },
+        '(6) If an element is the array is undefined or null, it is converted into empty string': function () {
+            var returnValue = join(["this", undefined, null, "thing", "is", "joined"]);
+            eq(returnValue, "this,,,thing,is,joined");
+        },
+        '(7) If a separator is provided, function should return a string comprised of joined elements of the array, separated by the separator': function () {
+            var returnValue = join(["this", 1, "thing", "is", "joined", [1, 2, 3]], '/');
+            eq(returnValue, "this/1/thing/is/joined/1,2,3");
+        },
+        '(8) If a separator is an empty string, all elements are joined with nothing in between them': function () {
+            var returnValue = join(["this", 1, "thing", "is", "joined", [1, 2, 3]], '');
+            eq(returnValue, "this1thingisjoined1,2,3");
+        },
+        '(9) If an element is an object literal, it appears in the returned string as [object Object]': function () {
+            var returnValue = join(["this", 1, "thing", "is", "joined", { key: "value" }], '');
+            eq(returnValue, "this1thingisjoined[object Object]");
+        },
+        '(10) Function can take an array-like object': function () {
+            function myFunction() {
+                var runJoin = join(arguments, '-');
+                return runJoin;
+            }
+            var returnValOfMyFunction = myFunction(5, "arguments", "in", "my", "Function", [1, [2, [3, 4], 5]])
+            eq(returnValOfMyFunction, "5-arguments-in-my-Function-1,2,3,4,5");
+        }
+    });
+</script>

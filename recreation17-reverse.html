@@ -1,0 +1,90 @@
+<script src="../simpletest.js"></script>
+<script>
+    function reverse(array) {
+        if (!array || typeof array === "string") {
+            throw new Error('reverse(' + array + ') is not a function');
+        }
+
+        for (var i = 0; i < (array.length - 1) / 2; i++) {
+
+            var initialValOfCurrentEl = array[i];
+            var checkIfiWasInarrayayBeforeUpdate = true;
+
+            if (!(i in array)) {
+                checkIfiWasInarrayayBeforeUpdate = false;
+            }
+
+            if (array.length - 1 - i in array) {
+                array[i] = array[array.length - 1 - i] //temp1;
+            } else {
+                delete array[i];
+            }
+
+            if (checkIfiWasInarrayayBeforeUpdate === true) {
+                array[array.length - 1 - i] = initialValOfCurrentEl;
+            } else {
+                delete array[array.length - 1 - i];
+            }
+        }
+        return array;
+    }
+    tests({
+        '(1) If the passed array is empty, the empty array is returned unmodified': function () {
+            var returnedArray = reverse([]);
+            var testThatArrayIsReturned = Array.isArray(returnedArray);
+            eq(testThatArrayIsReturned, true);
+        },
+        '(2) If the array is not empty, the function modifies the array *in place* by reversing the order of the elements; modified array is returned': function () {
+            var returnedArray = reverse([1, 2, 3]);
+            var assumedReturnedArray = [3, 2, 1];
+
+            for (i in returnedArray) {
+                eq(returnedArray[i], assumedReturnedArray[i]);
+            }
+        },
+        '(3) If nothing is passed into the function, an error is thrown': function () {
+            try {
+                reverse();
+            } catch (e) {
+                eq(e instanceof Error, true);
+            }
+        },
+        '(4) If the first arg is a string, an error is thrown': function () {
+            try {
+                reverse("not an array");
+            } catch (e) {
+                eq(e instanceof Error, true);
+            }
+        },
+        '(5) Function should preserve all empty indexes': function () {
+            var returnedArray = reverse([, 1, , "two", ,]);
+            var assumedReturnedArray = [, "two", , 1, ,];
+
+            for (var i = 0; i < returnedArray.length; i++) {
+                eq(returnedArray[i], assumedReturnedArray[i]);
+            }
+            // the below checks that empty indexes have not been assigned as undefined
+            var numOfNonEmptyIndexesInReturnedArr = 0;
+            var numOfNonEmptyIndexesInAssumedArr = 0;
+
+            for (i in returnedArray) {
+                numOfNonEmptyIndexesInReturnedArr++;
+            }
+            for (i in assumedReturnedArray) {
+                numOfNonEmptyIndexesInAssumedArr++;
+            }
+            eq(numOfNonEmptyIndexesInReturnedArr, numOfNonEmptyIndexesInAssumedArr);
+        }, '(6) Function can take an array-like object': function () {
+            function myFunction() {
+                var runReverse = reverse(arguments);
+                return runReverse;
+            }
+            var returnValOfMyFunction = myFunction(1, undefined, "two", 3);
+            var assumedReturnValue = [3, "two", undefined, 1];
+
+            for (i in returnValOfMyFunction) {
+                eq(returnValOfMyFunction[i], assumedReturnValue[i]);
+            }
+        }
+    });
+</script>

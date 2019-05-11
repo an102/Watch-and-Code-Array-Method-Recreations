@@ -1,0 +1,206 @@
+<script src="../simpletest.js"></script>
+<script>
+    function findIndex(array, callback, configThisObject) {
+
+        var originalArrayLength = array.length;
+        var findIndexCallback = callback;
+
+        if (configThisObject) {
+            findIndexCallback = callback.bind(configThisObject);
+        }
+
+        for (var i = 0; i < originalArrayLength; i++) {
+            if (findIndexCallback(array[i], i, array)) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+    tests({
+        '(1) Callback should run initial array.length times if nothing specified to return': function () {
+            var numOfTimesCallbackRuns = 0;
+            findIndex([1, 2, 3], function () {
+                numOfTimesCallbackRuns++;
+            });
+            eq(numOfTimesCallbackRuns, 3);
+        },
+        '(2) Callback should run even when indexes in the array have no value': function () {
+            var numOfTimesCallbackRuns = 0;
+            findIndex([, 1, 2, , 3, , 4,], function () {
+                numOfTimesCallbackRuns++;
+            });
+            eq(numOfTimesCallbackRuns, 7);
+        },
+        '(3) Function should return only the first index that satisfies the test function, then stop running': function () {
+            var numOfTimesCallbackRuns = 0;
+            var returnedIndex = findIndex([1, 2, 3, 4], function (element) {
+                numOfTimesCallbackRuns++;
+                return element > 1;
+            });
+            eq(returnedIndex, 1);
+            eq(numOfTimesCallbackRuns, 2)
+        },
+        '(4) Function should return -1 if test function is not satisfied': function () {
+            var returnedIndex = findIndex([1, 2, 3, 4], function (element) {
+                return element > 4;
+            });
+            eq(returnedIndex, -1);
+        },
+        '(5) Callback should take index as an argument': function () {
+            var returnedIndex = findIndex([1, 2, 3, 4], function (element, index) {
+                return element > 2 && index < 3;
+            });
+            eq(returnedIndex, 2);
+        },
+        '(6) Callback should take array as an argument': function () {
+            var returnedIndex = findIndex([1, 2, 3, 4], function (element, index, array) {
+                return element > 2 && array.length > 3;
+            });
+            eq(returnedIndex, 2);
+        },
+        '(7) Function should accept a configurable `this` object': function () {
+            var configThisObject = { key: "value" };
+            var returnedIndex = findIndex([1, 2, 3, 4], function (element) {
+                eq(this, configThisObject);
+                eq(this.key, "value");
+            }, configThisObject);
+        },
+        '(8) When an el is added to any pos in an arr during a callback, its i is not returnable within that same callback': function () {
+            var passedArray = [1, 2, 3];
+            var indexZeroAtEndOfFirstRun = '';
+            var returnedIndex = findIndex(passedArray, function (element, index, array) {
+                array.unshift(100);
+                indexZeroAtEndOfFirstRun = array[0];
+                return element === 1;
+            });
+            eq(returnedIndex, 0);
+            eq(indexZeroAtEndOfFirstRun, 100);
+        },
+        '(9) When an el not beyond orig array length is added to a later pos in an arr during a callback, its i is returnable in subsequent callbacks': function () {
+            var passedArray = [1, 2, 3];
+            var indexOneAtEndOfSecondRun = '';
+            returnedIndex = findIndex(passedArray, function (element, index, array) {
+                if (index === 0) {
+                    array.splice(1, 0, 100);
+                }
+                if (index === 1) {
+                    indexOneAtEndOfSecondRun = array[1];
+                }
+                return element === 100;
+            });
+            eq(returnedIndex, 1);
+            eq(indexOneAtEndOfSecondRun, 100);
+        },
+        '(10) When an el beyond orig array length is added to a pos in an arr during a callback, its i is not returnable in the function': function () {
+            var passedArray = [1, 2, 3];
+            var indexThreeAtEndOfThirdRun = '';
+            returnedIndex = findIndex(passedArray, function (element, index, array) {
+                if (index === 0) {
+                    array.push(100);
+                }
+                if (index === 2) {
+                    indexThreeAtEndOfThirdRun = array[3];
+                }
+                return element === 100;
+            });
+            eq(returnedIndex, -1);
+            eq(indexThreeAtEndOfThirdRun, 100);
+        },
+        '(11) When an el in an array is changed during a callback, its original val can still be used to return the corresponding i in that same callback': function () {
+            var passedArray = [1, 2, 3];
+            var indexZeroAtEndOfFirstRun = '';
+            var returnedIndex = findIndex(passedArray, function (element, index, array) {
+                array[0] = 100;
+                indexZeroAtEndOfFirstRun = array[0];
+                return element === 1;
+            });
+            eq(returnedIndex, 0);
+            eq(indexZeroAtEndOfFirstRun, 100);
+        },
+        '(12) When a later el not beyond orig array length is changed during a callback, its new val can be used to return the corresponding i in subsequent callbacks': function () {
+            var passedArray = [1, 2, 3];
+            var indexOneAtEndOfSecondRun = '';
+            returnedIndex = findIndex(passedArray, function (element, index, array) {
+                if (index === 0) {
+                    array[1] = 100;
+                }
+                if (index === 1) {
+                    indexOneAtEndOfSecondRun = array[1];
+                }
+                return element === 100;
+            });
+            eq(returnedIndex, 1);
+            eq(indexOneAtEndOfSecondRun, 100);
+        },
+        '(13) When an el in an array is deleted during a callback, the original i of the deleted value remains returnable in that same callback': function () {
+            var passedArray = [1, 2, 3];
+            var indexZeroAtEndOfFirstRun = '';
+            var returnedIndex = findIndex(passedArray, function (element, index, array) {
+                array.shift();
+                indexZeroAtEndOfFirstRun = array[0];
+                return element === 1;
+            });
+            eq(returnedIndex, 0);
+            eq(indexZeroAtEndOfFirstRun, 2);
+        },
+        '(14) When any el not beyond orig array length is deleted during a callback, it cannot be used to return its original i after that callback ends': function () {
+            var passedArray = [1, 2, 3, 4];
+            var indexOneAtEndOfThirdRun = '';
+            returnedIndex = findIndex(passedArray, function (element, index, array) {
+                if (index === 0) {
+                    array.splice(1, 1);
+                }
+                if (index === 1) {
+                    indexOneAtEndOfThirdRun = array[1];
+                }
+                return element === 2;
+            });
+            eq(returnedIndex, -1);
+            eq(indexOneAtEndOfThirdRun, 3);
+        },
+        '(15) When an el in an array is deleted during a callback, the callback still runs orig array length times': function () {
+            var numOfTimesCallbackRuns = 0;
+            var passedArray = [1, 2, 3];
+            var returnedIndex = findIndex(passedArray, function (element, index, array) {
+                numOfTimesCallbackRuns++;
+                if (index === 0) {
+                    array.pop();
+                }
+                return element === 3;
+            });
+            eq(returnedIndex, -1);
+            eq(numOfTimesCallbackRuns, 3);
+        },
+        '(16) When the test function returns something other than a boolean, i, or a false value, 0 is returned after one run': function () {
+            var numOfTimesCallbackRuns = 0;
+            var passedArray = [1, 2, 3];
+            var returnedIndex = findIndex(passedArray, function (element, index, array) {
+                numOfTimesCallbackRuns++;
+                return "not a boolean, i, or a false value";
+            });
+            eq(numOfTimesCallbackRuns, 1);
+            eq(returnedIndex, 0);
+        },
+        '(17) When the test function returns i, 1 returned after two runs': function () {
+            var numOfTimesCallbackRuns = 0;
+            var passedArray = [1, 2, 3];
+            var returnedIndex = findIndex(passedArray, function (element, index, array) {
+                numOfTimesCallbackRuns++;
+                return index;
+            });
+            eq(numOfTimesCallbackRuns, 2);
+            eq(returnedIndex, 1);
+        },
+        '(18) When the test function returns i where an arr has only one el, -1 is returned after one run': function () {
+            var numOfTimesCallbackRuns = 0;
+            var passedArray = [1];
+            var returnedIndex = findIndex(passedArray, function (element, index, array) {
+                numOfTimesCallbackRuns++;
+                return index;
+            });
+            eq(numOfTimesCallbackRuns, 1);
+            eq(returnedIndex, -1);
+        }
+    });
+</script>

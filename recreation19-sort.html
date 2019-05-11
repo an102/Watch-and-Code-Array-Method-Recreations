@@ -1,0 +1,171 @@
+<script src="../simpletest.js"></script>
+<script>
+    function sort(array, compareFunction) {
+        if (!array || typeof array === "string") {
+            throw new Error('sort(' + array + ') is not a function');
+        }
+
+        // iterates over `a` values
+        for (var i = 0; i < array.length - 1; i++) {
+
+            // iterates over `b` values
+            for (var j = i + 1; j < array.length; j++) {
+
+                var valOfElAtI = array[i];
+
+                if (!(j in array)) {
+                    continue;
+                } else if (!(i in array)) {
+                    array[i] = array[j];
+                    delete array[j];
+                    continue;
+                } else if (array[i] === undefined) {
+                    array[i] = array[j];
+                    array[j] = valOfElAtI;
+                    continue;
+                } else if (array[j] === undefined) {
+                    continue;
+                } else {
+                    if (!compareFunction) {
+                        var stringifiedIthEl = '';
+                        var stringifiedJthEl = '';
+
+                        if (array[i] === null) {
+                            stringifiedIthEl = "null";
+                        } else {
+                            stringifiedIthEl = array[i].toString();
+                        }
+
+                        if (array[j] === null) {
+                            stringifiedJthEl = "null";
+                        } else {
+                            stringifiedJthEl = array[j].toString();
+                        }
+
+                        if (stringifiedIthEl > stringifiedJthEl) {
+                            array[i] = array[j];
+                            array[j] = valOfElAtI;
+                        }
+                    } else {
+                        var compareValue = compareFunction(array[i], array[j]);
+
+                        if (compareValue > 0) {
+                            array[i] = array[j];
+                            array[j] = valOfElAtI;
+                        }
+                    }
+                }
+            }
+        }
+        return array;
+    }
+    tests({
+        '(1) If the passed array is empty, the empty array is returned unmodified': function () {
+            var returnedArray = sort([]);
+            var testThatArrayIsReturned = Array.isArray(returnedArray);
+            eq(testThatArrayIsReturned, true);
+        },
+        '(3) If nothing is passed into the function, an error is thrown': function () {
+            try {
+                sort();
+            } catch (e) {
+                eq(e instanceof Error, true);
+            }
+        },
+        '(4) If the first arg is a string, an error is thrown': function () {
+            try {
+                sort("not an array");
+            } catch (e) {
+                eq(e instanceof Error, true);
+            }
+        },
+        '(5) If the array is not empty, the function modifies the array *in place* by sorting elements from lowest to highest based on the Unicode point value of their stringified characters, \
+with the following exceptions: (a) an el that is an array does not have any array brackets recognized as characters; (b) empty indexes are preserved and sorted to the end; (c) undefined elements \
+are not stringified but are sorted toward the end of the array before empty indexes. The sorted array is returned': function () {
+
+                var returnedArray = sort([undefined, [], 1, null, "S", [400, 2], "z", NaN, 5, 2, [2], "ab", 0, , "a", 10, 3, "1", 1]);
+                var assumedReturnedArray = [[], 0, 1, "1", 1, 10, 2, [2], 3, [400, 2], 5, NaN, "S", "a", "ab", null, "z", undefined, ,];
+
+                for (var i = 0; i < returnedArray.length; i++) {
+                    if (Array.isArray(returnedArray[i])) {
+                        eq(returnedArray[i].toString(), assumedReturnedArray[i].toString());
+                    } else if (isNaN(returnedArray[i])) {
+                        eq(isNaN(assumedReturnedArray[i]), true);
+                    } else {
+                        eq(returnedArray[i], assumedReturnedArray[i]);
+                    }
+                }
+                // the below checks that empty indexes have not been assigned as undefined
+                var numOfNonEmptyIndexesInReturnedArr = 0;
+                var numOfNonEmptyIndexesInAssumedArr = 0;
+
+                for (i in returnedArray) {
+                    numOfNonEmptyIndexesInReturnedArr++;
+                }
+                for (i in assumedReturnedArray) {
+                    numOfNonEmptyIndexesInAssumedArr++;
+                }
+                eq(numOfNonEmptyIndexesInReturnedArr, numOfNonEmptyIndexesInAssumedArr);
+            },
+        '(6) If a compareFunction exists, the array is sorted according to the return value of the compareFunction; empty indexes sorted to end; undefined els sorted toward end and before empty indexes; sorted array returned': function () {
+            for (var numOfRuns = 1; numOfRuns < 2; numOfRuns++) {
+
+                var returnedArray = sort([6, , -1, 5, null, "205", [3], undefined, 1000, "200", 10, 0, null, 200, 30, "1", 4, 21, 100000], function (a, b) {
+                    if (numOfRuns === 1) {
+                        return a - b;
+                    } else if (numOfRuns === 2) {
+                        return a + b;
+                    } else if (numOfRuns === 3) {
+                        return a * b;
+                    } else {
+                        return a / b;
+                    }
+                });
+
+                var assumedReturnedArray = [];
+
+                if (numOfRuns === 1) {
+                    assumedReturnedArray = [-1, null, 0, null, "1", [3], 4, 5, 6, 10, 21, 30, "200", 200, "205", 1000, 100000, undefined, ,];
+                } else if (numOfRuns === 2) {
+                    assumedReturnedArray = [6, 100000, -1, 5, null, "205", [3], 1000, "200", 10, 0, null, 200, 30, "1", 4, 21, undefined, ,];
+                } else {
+                    assumedReturnedArray = [-1, 6, 100000, 5, null, "205", [3], 1000, "200", 10, 0, null, 200, 30, "1", 4, 21, undefined, ,];
+                }
+
+                for (var i = 0; i < returnedArray.length; i++) {
+                    if (Array.isArray(returnedArray[i])) {
+                        eq(returnedArray[i].toString(), assumedReturnedArray[i].toString());
+                    } else if (isNaN(returnedArray[i])) {
+                        eq(isNaN(assumedReturnedArray[i]), true);
+                    } else {
+                        eq(returnedArray[i], assumedReturnedArray[i]);
+                    }
+                }
+                // the below checks that empty indexes have not been assigned as undefined
+                var numOfNonEmptyIndexesInReturnedArr = 0;
+                var numOfNonEmptyIndexesInAssumedArr = 0;
+
+                for (i in returnedArray) {
+                    numOfNonEmptyIndexesInReturnedArr++;
+                }
+                for (i in assumedReturnedArray) {
+                    numOfNonEmptyIndexesInAssumedArr++;
+                }
+                eq(numOfNonEmptyIndexesInReturnedArr, numOfNonEmptyIndexesInAssumedArr);
+            }
+        },
+        '(6) Objects can be sorted given the value of one of their properties': function () {
+            var albums = [{ Nirvana: "In Utero", Year: "1993" }, { Pixies: "Doolittle", Year: "1989" }, { Ride: "Nowhere", Year: "1991" }, { Ween: "Quebec", Year: "2003" }, { Lilys: "Better Can't Make Your Life Better", Year: "1996" }, { Liars: "Mess", Year: "2014" }];
+
+            var returnedArray = sort(albums, function (a, b) {
+                a.Year - b.Year;
+            });
+
+            var assumedReturnedArray = [{ Pixies: "Doolittle", Year: "1989" }, { Ride: "Nowhere", Year: "1991" }, { Nirvana: "In Utero", Year: "1993" }, { Lilys: "Better Can't Make Your Life Better", Year: "1996" }, { Ween: "Quebec", Year: "2003" }, { Liars: "Mess", Year: "2014" }];
+
+            for (i in returnedArray) {
+                eq(returnedArray[i.Year], assumedReturnedArray[i.Year]);
+            }
+        }
+    });
+</script>
